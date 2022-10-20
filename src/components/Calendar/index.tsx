@@ -159,12 +159,13 @@ export const Calendar = (props: CalendarProps) => {
                       {getDayEvents(monthData, day).map((event) => {
                         return day ? (
                           <div
+                            key={event.id}
                             className="tooltip flex text-xs pb-1 px-1 cursor-pointer"
                             data-tip={event.description}
                           >
                             <span>
-                              {event.startDate.getHours()}:
-                              {event.startDate.getMinutes()}
+                              {new Date(event.startDate).getHours()}:
+                              {new Date(event.startDate).getMinutes()}
                             </span>
                             <span className="w-fit truncate ml-1">
                               {event.title}

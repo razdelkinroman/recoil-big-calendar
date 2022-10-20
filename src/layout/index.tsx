@@ -6,6 +6,7 @@ export const Layout = () => {
   const [showPanel, setShowPanel] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [activeDay, setActiveDay] = useState<Date>(new Date());
+  const [activeEventId, setActiveEventId] = useState("");
 
   return (
     <div className="h-full w-full">
@@ -21,11 +22,12 @@ export const Layout = () => {
             setShowPanel={setShowPanel}
             setShowForm={setShowForm}
             activeDay={activeDay}
+            setActiveEventId={setActiveEventId}
           />
         </div>
       </div>
       <ModalWrapper isOpen={showForm} setIsOpen={setShowForm}>
-        <TaskForm setIsOpen={setShowForm} />
+        <TaskForm setIsOpen={setShowForm} activeEventId={activeEventId} />
       </ModalWrapper>
     </div>
   );

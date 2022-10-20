@@ -1,25 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRecoilValue } from "recoil";
 import toast from "react-hot-toast";
 import { v4 } from "uuid";
 
-import { useAddTask } from "store/hooks";
+import { useAddTask, useEditTask } from "store/hooks";
+import { eventsAtom } from "store/atoms";
 import { Event } from "models";
 
-export const TaskForm = (props: TaskFormProps) => {
-  const { setIsOpen } = props;
+const initState = {
+  title: "",
+  description: "",
+  id: "1",
+  startDate: "",
+  endDate: "",
+};
 
+export const TaskForm = (props: TaskFormProps) => {
+  const { setIsOpen, activeEventId } = props;
   const [formData, setFormData] = useState<Event>({
-    title: "",
-    description: "",
-    id: "1",
-    startDate: new Date(),
-    endDate: new Date(),
+    ...initState,
   });
 
+  const allEvents = useRecoilValue(eventsAtom);
   const onAddTask = useAddTask();
+  const onEditTask = useEditTask();
 
-  const notify = () =>
-    toast("Событие успешно добавлено!", {
+  const notify = (text: string) =>
+    toast(text, {
       icon: "👏",
       style: {
         borderRadius: "10px",
@@ -35,49 +42,36 @@ export const TaskForm = (props: TaskFormProps) => {
       return {
         ...prev,
         [e.target.name]: e.target.value,
-        id: v4(),
-      };
-    });
-  };
-
-  const handleChangeEndDate = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const date = formData.startDate;
-    const dateCopy = new Date(date.getTime());
-    const value = event.target.value;
-
-    dateCopy.setTime(date.getTime() + Number(value) * 60 * 60 * 1000);
-
-    setFormData((prev: Event) => {
-      return {
-        ...prev,
-        endDate: dateCopy,
-      };
-    });
-  };
-
-  const handleChangeStartDate = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = event.target.value;
-
-    setFormData((prev: Event) => {
-      return {
-        ...prev,
-        startDate: new Date(value),
       };
     });
   };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onAddTask(formData);
+
+    if (activeEventId) {
+      onEditTask(formData);
+      notify("Событие успешно отредактировано");
+    } else {
+      onAddTask({ ...formData, id: v4() });
+      notify("Событие успешно создано");
+    }
     setIsOpen(false);
-    notify();
   };
 
+  useEffect(() => {
+    const event =
+      allEvents.find((items) => items.id === activeEventId) || initState;
+
+    setFormData(event);
+  }, [activeEventId, allEvents, setIsOpen]);
+
+  console.log("activeEventId", activeEventId);
   return (
     <div className="w-[500px] bg-base-100">
-      <h2 className="text-xl text-white mb-4">Новое событие</h2>
+      <h2 className="text-xl text-white mb-4">
+        {activeEventId ? "Редактирование события" : "Новое событие"}
+      </h2>
       <form className="flex flex-col gap-2" onSubmit={onSubmit}>
         <input
           name="title"
@@ -85,14 +79,15 @@ export const TaskForm = (props: TaskFormProps) => {
           placeholder="Добавьте тему события"
           className="input input-bordered input-info w-full"
           onChange={handleChange}
+          value={formData.title}
         />
         <div className="flex gap-2">
           <label className="label w-1/2">
-            <span className="label-text">Дата начала события</span>
+            <span className="label-text">Время начала</span>
           </label>
 
           <label className="label w-1/2">
-            <span className="label-text">Продолжительность</span>
+            <span className="label-text">Время окончания</span>
           </label>
         </div>
         <div className="flex gap-2">
@@ -100,24 +95,24 @@ export const TaskForm = (props: TaskFormProps) => {
             name="startDate"
             type="datetime-local"
             className="input input-bordered input-info w-1/2"
-            onChange={handleChangeStartDate}
+            onChange={handleChange}
+            value={formData.startDate}
           />
 
-          <select
-            className="select w-1/2 select-info"
-            onChange={handleChangeEndDate}
-          >
-            <option value={0.25}>15 минут</option>
-            <option value={0.5}>30 минут</option>
-            <option value={0.75}>45 минут</option>
-            <option value={1}>60 минут</option>
-          </select>
+          <input
+            name="endDate"
+            type="datetime-local"
+            className="input input-bordered input-info w-1/2"
+            onChange={handleChange}
+            value={formData.endDate}
+          />
         </div>
         <textarea
           name="description"
           className="textarea input-bordered w-full mb-2 textarea-info"
           placeholder="Описание события"
           onChange={handleChange}
+          value={formData.description}
         ></textarea>
 
         <button type="submit" className="btn btn-info">
@@ -130,4 +125,5 @@ export const TaskForm = (props: TaskFormProps) => {
 
 interface TaskFormProps {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  activeEventId: string;
 }
